@@ -9,7 +9,7 @@ export default async()=>{
   try{
    const u=new URL(s.url);
    if(s.source_type==="localist"){u.searchParams.set("pp","1");u.searchParams.set("days","30")}
-   if(s.source_type==="tribe"){u.searchParams.set("per_page","1")}
+   if(s.source_type==="tribe"){u.searchParams.set("per_page","1")}if(s.source_type==="umich_json"){u.searchParams.set("max-results","1")}
    const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),8000);
    const r=await fetch(u,{headers:{"User-Agent":"FreeNearMe/1.0 source verifier"},signal:ctrl.signal});
    clearTimeout(t);
