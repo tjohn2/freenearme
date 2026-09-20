@@ -1,0 +1,8 @@
+import {ImageResponse} from "next/og";
+import {createClient} from "@supabase/supabase-js";
+export const runtime="edge";
+export const size={width:1200,height:630};
+export const contentType="image/png";
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL||"https://pixlqytdhgxcfgagwijy.supabase.co";
+const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||"sb_publishable_twXglFUicR3kgQ3fTO3pJA_Ji3qwIwm";
+export default async function Image({params}:{params:Promise<{id:string}>}){const{id}=await params;const db=createClient(url,key);const{data}=await db.from("listing_cache").select("item").eq("id",decodeURIComponent(id)).maybeSingle();const x:any=data?.item||{};return new ImageResponse(<div style={{width:"100%",height:"100%",display:"flex",flexDirection:"column",justifyContent:"space-between",background:"#0b0c0a",color:"white",padding:"64px",fontFamily:"Arial"}}><div style={{display:"flex",fontSize:28,fontWeight:900}}>FREE <span style={{color:"#1687ff",marginLeft:8}}>NEAR ME</span></div><div style={{display:"flex",flexDirection:"column",gap:18}}><div style={{fontSize:24,fontWeight:900,color:"#1687ff"}}>{x.free_type==="deal"?"DEAL":"$0 FIND"}</div><div style={{fontSize:64,fontWeight:900,lineHeight:1.02,maxWidth:1000}}>{x.title||"Free Near Me"}</div><div style={{fontSize:30,color:"#c9d2dd"}}>{x.venue||"Find genuinely free things near you."}</div></div><div style={{fontSize:22,color:"#9ba8b6"}}>freenearme.netlify.app</div></div>,size)}
