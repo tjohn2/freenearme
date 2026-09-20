@@ -7,6 +7,6 @@ export default async()=>{
  await db.from("listing_cache").delete().lt("expires_at",now);
  await db.from("listing_cache").delete().eq("verification_status","source-discovered").lt("updated_at",oldCommunity);
  await db.from("source_health").update({last_status:"stale",updated_at:new Date().toISOString()}).lt("last_checked_at",new Date(Date.now()-2*864e5).toISOString());
- return new Response("ok");
+ await db.from("job_runs").insert({job_name:"cleanup",status:"ok",finished_at:new Date().toISOString()});return new Response("ok");
 };
 export const config={schedule:"@daily"};
