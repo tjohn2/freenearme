@@ -134,3 +134,29 @@ alter table source_registry enable row level security;
 drop policy if exists "public_read_source_registry" on source_registry;
 create policy "public_read_source_registry" on source_registry for select to anon,authenticated using(active=true);
 grant select on source_registry to anon,authenticated;
+
+
+-- Launch operations, alerts, dynamic SEO and observability.
+alter table alert_subscriptions add column if not exists last_notified_at timestamptz;
+alter table alert_subscriptions add column if not exists last_listing_ids text[] not null default '{}';
+alter table source_registry add column if not exists seo_slug text;
+
+create table if not exists moderation_audit(
+ id bigserial primary key,action text not null,target_type text not null,target_id text not null,note text,created_at timestamptz not null default now()
+);
+alter table moderation_audit enable row level security;
+revoke all on moderation_audit from anon,authenticated;
+create index if not exists moderation_audit_created_idx on moderation_audit(created_at);
+
+create table if not exists client_errors(
+ id bigserial primary key,anonymous_id text,message text not null,path text,user_agent text,metadata jsonb not null default '{}',created_at timestamptz not null default now()
+);
+alter table client_errors enable row level security;
+drop policy if exists "public_insert_client_errors" on client_errors;
+create policy "public_insert_client_errors" on client_errors for insert to anon,authenticated with check(char_length(message) between 1 and 1000);
+grant insert on client_errors to anon,authenticated;
+revoke select on client_errors from anon,authenticated;
+create index if not exists client_errors_created_idx on client_errors(created_at);
+
+alter table listing_cache add column if not exists location geography(point,4326);
+create index if not exists listing_cache_location_idx on listing_cache using gist(location);
