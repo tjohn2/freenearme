@@ -10,3 +10,7 @@
 .locationbox small{grid-column:1/-1;color:var(--muted);font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .type-deal{background:#ffd66b}.type-eligible{background:#c9ddff}.type-signup{background:#d8cbff}.type-free_with_purchase{background:#ffe0b5}.type-community{background:#e7e7e7}
 @media(max-width:620px){.locationbox{grid-template-columns:1fr auto}.locationbox input{width:100%}}
+
+.freshness{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0 14px}
+.freshness button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 10px;font-size:11px;font-weight:850;color:#4d5662}
+.freshness button:hover{border-color:#9aabba}
