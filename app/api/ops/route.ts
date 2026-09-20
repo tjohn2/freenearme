@@ -10,7 +10,7 @@ export async function GET(req:NextRequest){
   db.from("source_health").select("*").order("source_name"),
   db.from("submissions").select("*").eq("status","pending").order("created_at",{ascending:false}).limit(100),
   db.from("organization_claims").select("*").eq("status","pending").order("created_at",{ascending:false}).limit(100),
-  db.from("listing_feedback").select("listing_id,feedback,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).limit(500),
+  db.from("listing_feedback").select("id,listing_id,feedback,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).limit(500),
   db.from("analytics_events").select("event_name,listing_id,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).limit(2000),
   db.from("listing_cache").select("id",{count:"exact",head:true}).gt("expires_at",new Date().toISOString()),
   db.from("source_registry").select("id,name,source_type,url,latitude,longitude,coverage_miles,active,last_verified_at").order("name"),
