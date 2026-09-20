@@ -145,6 +145,8 @@ create table if not exists moderation_audit(
  id bigserial primary key,action text not null,target_type text not null,target_id text not null,note text,created_at timestamptz not null default now()
 );
 alter table moderation_audit enable row level security;
+drop policy if exists "deny_public_moderation_audit" on moderation_audit;
+create policy "deny_public_moderation_audit" on moderation_audit for all to anon,authenticated using(false) with check(false);
 revoke all on moderation_audit from anon,authenticated;
 create index if not exists moderation_audit_created_idx on moderation_audit(created_at);
 
