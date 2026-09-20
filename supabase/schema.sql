@@ -118,7 +118,7 @@ grant select on promotions to anon,authenticated;
 create table if not exists source_registry(
   id text primary key,
   name text not null,
-  source_type text not null check(source_type in ('localist','ucf_json','tribe')),
+  source_type text not null check(source_type in ('localist','ucf_json','tribe','umich_json')),
   url text not null,
   latitude double precision not null,
   longitude double precision not null,
