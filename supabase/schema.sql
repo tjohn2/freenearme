@@ -179,3 +179,37 @@ select m.slug,m.city,m.state,m.priority,
  (select count(*) from listing_cache c where c.expires_at>now() and c.location is not null and st_dwithin(c.location,st_setsrid(st_makepoint(m.longitude,m.latitude),4326)::geography,25*1609.344)) as cached_count
 from metro_targets m where m.active=true;
 grant select on metro_inventory to anon,authenticated;
+
+
+create table if not exists organizations(
+ id uuid primary key default gen_random_uuid(),name text not null,website text,status text not null default 'approved' check(status in ('pending','approved','suspended')),
+ created_at timestamptz not null default now(),updated_at timestamptz not null default now()
+);
+alter table organizations enable row level security;
+drop policy if exists "public_read_approved_organizations" on organizations;
+create policy "public_read_approved_organizations" on organizations for select to anon,authenticated using(status='approved');
+
+alter table organization_claims add column if not exists user_id uuid references auth.users(id);
+drop policy if exists "authenticated_claim_org" on organization_claims;
+create policy "authenticated_claim_org" on organization_claims for insert to authenticated with check(user_id=(select auth.uid()));
+
+create table if not exists organization_members(
+ organization_id uuid not null references organizations(id) on delete cascade,user_id uuid not null references auth.users(id) on delete cascade,
+ role text not null default 'editor' check(role in ('owner','editor')),created_at timestamptz not null default now(),primary key(organization_id,user_id)
+);
+alter table organization_members enable row level security;
+drop policy if exists "own_org_memberships" on organization_members;
+create policy "own_org_memberships" on organization_members for select to authenticated using((select auth.uid())=user_id);
+
+create table if not exists organization_listings(
+ id uuid primary key default gen_random_uuid(),organization_id uuid not null references organizations(id) on delete cascade,created_by uuid not null references auth.users(id),
+ title text not null,description text,category text not null default 'Events',venue text,address text,latitude double precision,longitude double precision,
+ starts_at timestamptz,ends_at timestamptz,free_type text not null default 'free',requirements text,source_url text,recurrence text,
+ status text not null default 'draft' check(status in ('draft','pending','approved','rejected')),created_at timestamptz not null default now(),updated_at timestamptz not null default now()
+);
+alter table organization_listings enable row level security;
+drop policy if exists "org_members_manage_listings" on organization_listings;
+create policy "org_members_manage_listings" on organization_listings for all to authenticated
+using(exists(select 1 from organization_members m where m.organization_id=organization_listings.organization_id and m.user_id=(select auth.uid())))
+with check(created_by=(select auth.uid()) and exists(select 1 from organization_members m where m.organization_id=organization_listings.organization_id and m.user_id=(select auth.uid())));
+create index if not exists organization_listings_org_idx on organization_listings(organization_id,status);
