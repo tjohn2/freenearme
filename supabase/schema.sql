@@ -45,7 +45,7 @@ grant select on program_locations to anon,authenticated;
 create table if not exists listing_cache(
  id text primary key,title text not null,category text not null,venue text,item jsonb not null,latitude double precision,
  longitude double precision,starts_at timestamptz,ends_at timestamptz,free_type text,source_url text,verification_status text,
- expires_at timestamptz not null default(now()+interval '14 days'),updated_at timestamptz not null default now()
+ expires_at timestamptz not null default(now()+interval '14 days'),source_checked_at timestamptz,source_http_status integer,updated_at timestamptz not null default now()
 );
 create index if not exists listing_cache_expires_idx on listing_cache(expires_at);
 alter table listing_cache enable row level security;
@@ -113,3 +113,24 @@ alter table promotions enable row level security;
 drop policy if exists "public_read_active_promotions" on promotions;
 create policy "public_read_active_promotions" on promotions for select to anon,authenticated using(active=true and (starts_at is null or starts_at<=now()) and (ends_at is null or ends_at>=now()));
 grant select on promotions to anon,authenticated;
+
+
+create table if not exists source_registry(
+  id text primary key,
+  name text not null,
+  source_type text not null check(source_type in ('localist','ucf_json','tribe')),
+  url text not null,
+  latitude double precision not null,
+  longitude double precision not null,
+  coverage_miles integer not null default 50 check(coverage_miles between 1 and 250),
+  trust_tier text not null default 'official',
+  free_policy text not null default 'explicit_only',
+  active boolean not null default true,
+  last_verified_at timestamptz,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table source_registry enable row level security;
+drop policy if exists "public_read_source_registry" on source_registry;
+create policy "public_read_source_registry" on source_registry for select to anon,authenticated using(active=true);
+grant select on source_registry to anon,authenticated;
