@@ -1,0 +1,36 @@
+name: Production smoke test
+on:
+  schedule:
+    - cron: "41 */6 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - name: Check public routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://freenearme.netlify.app"
+          for path in "/" "/manifest.webmanifest" "/robots.txt" "/sitemap.xml" "/free/gainesville-fl"; do
+            echo "Checking $path"
+            curl --fail --silent --show-error --max-time 20 --retry 2 "$base$path" -o /tmp/out
+            test -s /tmp/out
+          done
+      - name: Check nearby API
+        shell: bash
+        run: |
+          set -euo pipefail
+          url="https://freenearme.netlify.app/api/nearby?lat=29.6516&lng=-82.3248&radius=25"
+          curl --fail --silent --show-error --max-time 25 --retry 2 "$url" -o /tmp/nearby.json
+          python - <<'PY'
+          import json
+          with open('/tmp/nearby.json') as f:
+              d=json.load(f)
+          assert isinstance(d.get('items'), list), d
+          assert 'generated_at' in d, d
+          print('items', len(d['items']))
+          PY
