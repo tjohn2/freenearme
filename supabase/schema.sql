@@ -213,3 +213,15 @@ create policy "org_members_manage_listings" on organization_listings for all to 
 using(exists(select 1 from organization_members m where m.organization_id=organization_listings.organization_id and m.user_id=(select auth.uid())))
 with check(created_by=(select auth.uid()) and exists(select 1 from organization_members m where m.organization_id=organization_listings.organization_id and m.user_id=(select auth.uid())));
 create index if not exists organization_listings_org_idx on organization_listings(organization_id,status);
+
+
+create table if not exists job_runs(
+ id bigserial primary key,job_name text not null,status text not null,processed integer not null default 0,detail jsonb not null default '{}',
+ started_at timestamptz not null default now(),finished_at timestamptz not null default now()
+);
+alter table job_runs enable row level security;
+drop policy if exists "deny_public_job_runs" on job_runs;
+create policy "deny_public_job_runs" on job_runs for all to anon,authenticated using(false) with check(false);
+revoke all on job_runs from anon,authenticated;
+create index if not exists job_runs_job_finished_idx on job_runs(job_name,finished_at desc);
+alter view metro_inventory set (security_invoker=true);
