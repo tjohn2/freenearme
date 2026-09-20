@@ -33,9 +33,9 @@ async function load(src:any){
 }
 export default async()=>{
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL||"https://pixlqytdhgxcfgagwijy.supabase.co",key=process.env.SUPABASE_SERVICE_ROLE_KEY;if(!key)return new Response("missing service role",{status:500});
- const db=createClient(url,key);const{data:sources}=await db.from("source_registry").select("*").eq("active",true);let total=0;
- for(let i=0;i<(sources||[]).length;i+=4){
-  const batch=(sources||[]).slice(i,i+4);const sets=await Promise.all(batch.map(load));
+ const db=createClient(url,key);const{data:sources}=await db.from("source_registry").select("*").eq("active",true).order("last_verified_at",{ascending:true,nullsFirst:true}).limit(12);let total=0;
+ for(let i=0;i<(sources||[]).length;i+=6){
+  const batch=(sources||[]).slice(i,i+6);const sets=await Promise.all(batch.map(load));
   for(let k=0;k<batch.length;k++){const src=batch[k],items=(sets[k]||[]).filter((x:any)=>Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude)));if(items.length){const rows=items.map((x:any)=>({id:x.id,title:x.title,category:x.category,venue:x.venue||null,item:{...x,distance_miles:0,detail_url:"/find/"+encodeURIComponent(x.id)},latitude:Number(x.latitude),longitude:Number(x.longitude),location:point(Number(x.longitude),Number(x.latitude)),starts_at:x.starts_at||null,ends_at:x.ends_at||null,free_type:x.free_type,source_url:x.source_url||null,verification_status:x.verification_status,expires_at:x.ends_at||x.starts_at?new Date(Math.max(Date.now()+864e5,new Date(x.ends_at||x.starts_at).getTime()+2*864e5)).toISOString():new Date(Date.now()+14*864e5).toISOString(),updated_at:new Date().toISOString()}));await db.from("listing_cache").upsert(rows,{onConflict:"id"});total+=rows.length}await db.from("source_health").upsert({source_name:src.id,result_count:items.length,last_status:"ok",last_checked_at:new Date().toISOString(),last_error:null,updated_at:new Date().toISOString()},{onConflict:"source_name"})}
  }
  return new Response(JSON.stringify({ok:true,total,sources:(sources||[]).length}),{headers:{"content-type":"application/json"}});
