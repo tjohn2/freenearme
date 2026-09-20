@@ -6,7 +6,7 @@ export async function GET(req:NextRequest){
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL||"https://pixlqytdhgxcfgagwijy.supabase.co",key=process.env.SUPABASE_SERVICE_ROLE_KEY;
  if(!key)return NextResponse.json({error:"server config"},{status:500});
  const db=createClient(url,key);
- const [health,subs,claims,feedback,analytics,cache,registry,errors,audit]=await Promise.all([
+ const [health,subs,claims,feedback,analytics,cache,registry,errors,audit,metros]=await Promise.all([
   db.from("source_health").select("*").order("source_name"),
   db.from("submissions").select("*").eq("status","pending").order("created_at",{ascending:false}).limit(100),
   db.from("organization_claims").select("*").eq("status","pending").order("created_at",{ascending:false}).limit(100),
@@ -15,10 +15,11 @@ export async function GET(req:NextRequest){
   db.from("listing_cache").select("id",{count:"exact",head:true}).gt("expires_at",new Date().toISOString()),
   db.from("source_registry").select("id,name,source_type,url,latitude,longitude,coverage_miles,active,last_verified_at").order("name"),
   db.from("client_errors").select("message,path,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).order("created_at",{ascending:false}).limit(100),
-  db.from("moderation_audit").select("*").order("created_at",{ascending:false}).limit(100)
+  db.from("moderation_audit").select("*").order("created_at",{ascending:false}).limit(100),
+  db.from("metro_inventory").select("*").order("priority").limit(100)
  ]);
  const counts:any={};for(const e of analytics.data||[])counts[e.event_name]=(counts[e.event_name]||0)+1;
- return NextResponse.json({source_health:health.data||[],source_registry:registry.data||[],pending_submissions:subs.data||[],organization_claims:claims.data||[],feedback:feedback.data||[],client_errors:errors.data||[],moderation_audit:audit.data||[],analytics:counts,active_cached_listings:cache.count||0,generated_at:new Date().toISOString()});
+ return NextResponse.json({source_health:health.data||[],source_registry:registry.data||[],pending_submissions:subs.data||[],organization_claims:claims.data||[],feedback:feedback.data||[],client_errors:errors.data||[],moderation_audit:audit.data||[],metro_inventory:metros.data||[],analytics:counts,active_cached_listings:cache.count||0,generated_at:new Date().toISOString()});
 }
 export async function POST(req:NextRequest){
  const token=req.headers.get("x-ops-token")||"";if(!process.env.OPS_TOKEN||token!==process.env.OPS_TOKEN)return NextResponse.json({error:"not found"},{status:404});
