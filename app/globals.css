@@ -38,3 +38,11 @@
 
 .siteFooter{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:26px 4px 100px;color:var(--muted);font-size:12px;font-weight:800}.siteFooter div{display:flex;gap:14px;flex-wrap:wrap}.siteFooter a{color:var(--muted);text-decoration:none}.siteFooter a:hover{color:var(--ink)}
 @media(max-width:620px){.siteFooter{align-items:flex-start;flex-direction:column}}
+
+/* Mobile hero: keep headline fully inside viewport */
+@media(max-width:600px){
+ .hero{overflow:hidden}
+ .hero h1{font-size:clamp(44px,13.2vw,52px);line-height:.94;letter-spacing:-3.2px;max-width:100%;overflow-wrap:normal;word-break:normal}
+ .hero h1 em{display:inline-block;max-width:100%;padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+}
+@media(max-width:390px){.hero h1{font-size:12.6vw;letter-spacing:-2.8px}}
