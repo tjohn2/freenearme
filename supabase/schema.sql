@@ -15,3 +15,101 @@ drop policy if exists "public_submit_listing_feedback" on listing_feedback;
 create policy "public_submit_listing_feedback" on listing_feedback for insert to anon,authenticated with check(feedback in ('active','gone','inaccurate'));
 revoke select on listing_feedback from anon,authenticated;
 grant insert on listing_feedback to anon,authenticated;
+
+
+-- Scale foundation: canonical programs, cached shareable listings, accounts, alerts, analytics, org onboarding, ops.
+create table if not exists programs(
+  id text primary key,title text not null,description text,category text not null,
+  free_type text not null check(free_type in ('free','signup','eligible','deal','free_with_purchase','community')),
+  requirements text,source_url text not null,source_name text not null,eligibility text[] not null default '{}',
+  recurrence text,offer_kind text,source_tier text not null default 'official',
+  verification_status text not null default 'source-verified',active boolean not null default true,
+  starts_at timestamptz,ends_at timestamptz,scope text not null default 'national',updated_at timestamptz not null default now()
+);
+alter table programs enable row level security;
+drop policy if exists "public_read_programs" on programs;
+create policy "public_read_programs" on programs for select to anon,authenticated using(active=true);
+grant select on programs to anon,authenticated;
+
+create table if not exists program_locations(
+ id uuid primary key default gen_random_uuid(),program_id text not null references programs(id) on delete cascade,
+ source_location_id text,venue text not null,address text,location geography(point,4326),active boolean not null default true,
+ updated_at timestamptz not null default now(),unique(program_id,source_location_id)
+);
+create index if not exists program_locations_location_idx on program_locations using gist(location);
+alter table program_locations enable row level security;
+drop policy if exists "public_read_program_locations" on program_locations;
+create policy "public_read_program_locations" on program_locations for select to anon,authenticated using(active=true);
+grant select on program_locations to anon,authenticated;
+
+create table if not exists listing_cache(
+ id text primary key,title text not null,category text not null,venue text,item jsonb not null,latitude double precision,
+ longitude double precision,starts_at timestamptz,ends_at timestamptz,free_type text,source_url text,verification_status text,
+ expires_at timestamptz not null default(now()+interval '14 days'),updated_at timestamptz not null default now()
+);
+create index if not exists listing_cache_expires_idx on listing_cache(expires_at);
+alter table listing_cache enable row level security;
+drop policy if exists "public_read_listing_cache" on listing_cache;
+create policy "public_read_listing_cache" on listing_cache for select to anon,authenticated using(expires_at>now());
+grant select on listing_cache to anon,authenticated;
+
+create table if not exists user_preferences(
+ user_id uuid primary key references auth.users(id) on delete cascade,display_name text,home_lat double precision,home_lng double precision,
+ radius_miles integer not null default 25 check(radius_miles between 1 and 100),interests text[] not null default '{}',updated_at timestamptz not null default now()
+);
+alter table user_preferences enable row level security;
+drop policy if exists "own_preferences" on user_preferences;
+create policy "own_preferences" on user_preferences for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+grant select,insert,update,delete on user_preferences to authenticated;
+
+create table if not exists saved_items(
+ user_id uuid not null references auth.users(id) on delete cascade,listing_id text not null,created_at timestamptz not null default now(),
+ primary key(user_id,listing_id)
+);
+alter table saved_items enable row level security;
+drop policy if exists "own_saved_items" on saved_items;
+create policy "own_saved_items" on saved_items for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+grant select,insert,delete on saved_items to authenticated;
+
+create table if not exists alert_subscriptions(
+ id uuid primary key default gen_random_uuid(),user_id uuid not null references auth.users(id) on delete cascade,
+ radius_miles integer not null default 10 check(radius_miles between 1 and 100),categories text[] not null default '{}',
+ enabled boolean not null default true,created_at timestamptz not null default now(),updated_at timestamptz not null default now()
+);
+alter table alert_subscriptions enable row level security;
+drop policy if exists "own_alerts" on alert_subscriptions;
+create policy "own_alerts" on alert_subscriptions for all to authenticated using(auth.uid()=user_id) with check(auth.uid()=user_id);
+grant select,insert,update,delete on alert_subscriptions to authenticated;
+
+create table if not exists analytics_events(
+ id bigserial primary key,anonymous_id text,user_id uuid,event_name text not null check(char_length(event_name) between 1 and 80),
+ listing_id text,metadata jsonb not null default '{}',created_at timestamptz not null default now()
+);
+alter table analytics_events enable row level security;
+drop policy if exists "public_insert_analytics" on analytics_events;
+create policy "public_insert_analytics" on analytics_events for insert to anon,authenticated with check(user_id is null or user_id=auth.uid());
+revoke select on analytics_events from anon,authenticated; grant insert on analytics_events to anon,authenticated;
+
+create table if not exists organization_claims(
+ id uuid primary key default gen_random_uuid(),organization_name text not null,website text,contact_email text not null,message text,
+ status text not null default 'pending' check(status in ('pending','approved','rejected')),created_at timestamptz not null default now()
+);
+alter table organization_claims enable row level security;
+drop policy if exists "public_submit_organization_claims" on organization_claims;
+create policy "public_submit_organization_claims" on organization_claims for insert to anon,authenticated with check(status='pending');
+revoke select on organization_claims from anon,authenticated;grant insert on organization_claims to anon,authenticated;
+
+create table if not exists source_health(
+ source_name text primary key,enabled boolean not null default true,result_count integer not null default 0,last_status text not null default 'unknown',
+ last_checked_at timestamptz,last_error text,updated_at timestamptz not null default now()
+);
+alter table source_health enable row level security;revoke all on source_health from anon,authenticated;
+
+create table if not exists promotions(
+ id uuid primary key default gen_random_uuid(),organization_name text not null,title text not null,destination_url text not null,
+ label text not null default 'Sponsored',active boolean not null default false,starts_at timestamptz,ends_at timestamptz,created_at timestamptz not null default now()
+);
+alter table promotions enable row level security;
+drop policy if exists "public_read_active_promotions" on promotions;
+create policy "public_read_active_promotions" on promotions for select to anon,authenticated using(active=true and (starts_at is null or starts_at<=now()) and (ends_at is null or ends_at>=now()));
+grant select on promotions to anon,authenticated;
