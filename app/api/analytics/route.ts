@@ -12,7 +12,7 @@ export async function POST(req:NextRequest){
       anonymous_id:b.anonymous_id?String(b.anonymous_id).slice(0,120):null,
       event_name,
       listing_id:b.listing_id?String(b.listing_id).slice(0,300):null,
-      metadata:typeof b.metadata==="object"&&b.metadata?b.metadata:{}
+      session_id:b.session_id?String(b.session_id).slice(0,120):null,\n      area_id:b.area_id?String(b.area_id).slice(0,120):null,\n      latitude_bucket:Number.isFinite(Number(b.latitude_bucket))?Number(b.latitude_bucket):null,\n      longitude_bucket:Number.isFinite(Number(b.longitude_bucket))?Number(b.longitude_bucket):null,\n      metadata:typeof b.metadata==="object"&&b.metadata?b.metadata:{}
     });
     return NextResponse.json({ok:true});
   }catch{return NextResponse.json({ok:false},{status:400})}
