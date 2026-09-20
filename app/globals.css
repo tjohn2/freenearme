@@ -46,3 +46,6 @@
  .hero h1 em{display:inline-block;max-width:100%;padding:0 6px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
 }
 @media(max-width:390px){.hero h1{font-size:12.6vw;letter-spacing:-2.8px}}
+
+.feedStatus{margin:5px 0 0;color:var(--muted);font-size:12px;font-weight:700}.feedtop>div{min-width:0}.feedtop h2{line-height:1.12}
+@media(max-width:600px){.hero{padding-bottom:20px}.feed{padding-top:0}.feedtop{position:relative}.cats{margin-top:14px}}
