@@ -1,0 +1,1 @@
+import type {MetadataRoute} from "next";export default function manifest():MetadataRoute.Manifest{return{name:"Free Near Me",short_name:"FreeNearMe",description:"Find genuinely free things near you.",start_url:"/",display:"standalone",background_color:"#f4f2ea",theme_color:"#0d0e0c"}}
