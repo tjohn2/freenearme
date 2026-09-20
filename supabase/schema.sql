@@ -225,3 +225,13 @@ create policy "deny_public_job_runs" on job_runs for all to anon,authenticated u
 revoke all on job_runs from anon,authenticated;
 create index if not exists job_runs_job_finished_idx on job_runs(job_name,finished_at desc);
 alter view metro_inventory set (security_invoker=true);
+
+
+alter table source_registry add column if not exists last_ingested_at timestamptz;
+alter table source_registry add column if not exists next_attempt_at timestamptz;
+alter table source_registry add column if not exists consecutive_failures integer not null default 0;
+alter table source_registry add column if not exists last_ingest_count integer not null default 0;
+alter table source_registry add column if not exists last_ingest_error text;
+alter table metro_targets add column if not exists last_warmed_at timestamptz;
+create index if not exists source_registry_ingest_due_idx on source_registry(active,next_attempt_at,last_ingested_at);
+create index if not exists metro_targets_warm_idx on metro_targets(active,last_warmed_at);
