@@ -13,7 +13,7 @@ export async function GET(req:NextRequest){
   db.from("listing_feedback").select("id,listing_id,feedback,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).limit(500),
   db.from("analytics_events").select("event_name,listing_id,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).limit(2000),
   db.from("listing_cache").select("id",{count:"exact",head:true}).gt("expires_at",new Date().toISOString()),
-  db.from("source_registry").select("id,name,source_type,url,latitude,longitude,coverage_miles,active,last_verified_at").order("name"),
+  db.from("source_registry").select("id,name,source_type,url,latitude,longitude,coverage_miles,active,last_verified_at,last_ingested_at,next_attempt_at,consecutive_failures,last_ingest_count,last_ingest_error").order("name"),
   db.from("client_errors").select("message,path,created_at").gte("created_at",new Date(Date.now()-7*864e5).toISOString()).order("created_at",{ascending:false}).limit(100),
   db.from("moderation_audit").select("*").order("created_at",{ascending:false}).limit(100),
   db.from("metro_inventory").select("*").order("priority").limit(100),
