@@ -1,0 +1,15 @@
+import {createClient} from "@supabase/supabase-js";
+import type {Metadata} from "next";
+import Link from "next/link";
+const url=process.env.NEXT_PUBLIC_SUPABASE_URL||"https://pixlqytdhgxcfgagwijy.supabase.co";
+const key=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY||"sb_publishable_twXglFUicR3kgQ3fTO3pJA_Ji3qwIwm";
+async function getItem(id:string){const db=createClient(url,key);const{data}=await db.from("listing_cache").select("item").eq("id",id).maybeSingle();return data?.item||null}
+export async function generateMetadata({params}:{params:Promise<{id:string}>}):Promise<Metadata>{const{id}=await params;const x=await getItem(decodeURIComponent(id));return x?{title:x.title+" | Free Near Me",description:x.description||("See "+x.title+" on Free Near Me.")}:{title:"Free Near Me"}}
+export default async function FindPage({params}:{params:Promise<{id:string}>}){
+  const{id}=await params;const x=await getItem(decodeURIComponent(id));
+  if(!x)return <main className="detailPage"><Link href="/">← Free Near Me</Link><section className="detailHero"><h1>This find is no longer cached.</h1><p>It may have expired or not been refreshed recently.</p><Link className="detailPrimary" href="/">Find something free nearby</Link></section></main>;
+  const directions=Number.isFinite(Number(x.latitude))&&Number.isFinite(Number(x.longitude))?"https://www.google.com/maps/dir/?api=1&destination="+x.latitude+","+x.longitude:null;
+  const free=x.free_type==="deal"?"DEAL":x.free_type==="signup"?"FREE · SIGNUP":x.free_type==="eligible"?"FREE · ELIGIBLE":x.free_type==="free_with_purchase"?"FREE W/ PURCHASE":x.free_type==="community"?"COMMUNITY REPORTED":"FREE";
+  const structured={"@context":"https://schema.org","@type":x.starts_at?"Event":"Place",name:x.title,description:x.description,url:x.source_url||undefined,startDate:x.starts_at||undefined,endDate:x.ends_at||undefined,location:x.starts_at?{"@type":"Place",name:x.venue,address:x.address||undefined}:undefined};
+  return <main className="detailPage"><Link href="/">← Free Near Me</Link><section className="detailHero"><div className={"badge type-"+x.free_type}>{free}</div><h1>{x.title}</h1><p className="detailVenue">{x.venue}{x.address?" · "+x.address:""}</p>{x.description&&<p>{x.description}</p>}{x.requirements&&<div className="requirements"><b>Requirement:</b> {x.requirements}</div>}<div className="detailFacts"><span>{x.recurrence||x.starts_at?new Date(x.starts_at||Date.now()).toLocaleString():"Anytime"}</span><span>{x.verification_status==="verified"?"✓ Verified":x.verification_status==="source-verified"?"✓ Source verified":"Source discovered"}</span></div><div className="detailActions">{directions&&<a className="detailPrimary" href={directions} target="_blank" rel="noreferrer">Directions</a>}{x.source_url&&<a href={x.source_url} target="_blank" rel="noreferrer">View official source ↗</a>}</div></section><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(structured)}}/></main>
+}
