@@ -1,9 +1,11 @@
 "use client";
 import {useEffect,useMemo,useRef,useState} from "react";
-type Item={id:string;title:string;description?:string;category:string;venue:string;address?:string;latitude?:number;longitude?:number;distance_miles:number;starts_at:string|null;ends_at?:string|null;free_type:string;requirements?:string;source_url?:string;source_name?:string;image_url?:string;verification_status?:string;last_verified_at?:string;is_featured?:boolean};
+type Item={id:string;title:string;description?:string;category:string;venue:string;address?:string;latitude?:number;longitude?:number;distance_miles:number;starts_at:string|null;ends_at?:string|null;free_type:string;requirements?:string;source_url?:string;source_name?:string;image_url?:string;verification_status?:string;last_verified_at?:string;is_featured?:boolean;eligibility?:string[];recurrence?:string;offer_kind?:string;source_tier?:string};
 const cats=["For You","Free Today","Events","Food & Treats","Kids","Activities","Free Stuff","Veteran","Deals"];
 type View="feed"|"map"|"saved";
-function whenLabel(x:Item){if(!x.starts_at)return"Anytime";return new Date(x.starts_at).toLocaleString([],{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
+function whenLabel(x:Item){if(x.recurrence)return x.recurrence;if(!x.starts_at)return"Anytime";return new Date(x.starts_at).toLocaleString([],{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}
+function freeLabel(x:Item){if(x.free_type==="deal")return"DEAL";if(x.free_type==="eligible")return"FREE · ELIGIBLE";if(x.free_type==="signup")return"FREE · SIGNUP";if(x.free_type==="free_with_purchase")return"FREE W/ PURCHASE";if(x.free_type==="community")return"COMMUNITY REPORTED";return"FREE"}
+function trustLabel(x:Item){if(x.verification_status==="verified")return"✓ Verified";if(x.verification_status==="source-verified")return"✓ Source verified";return"Source discovered"}
 export default function Home(){
  const mapRef=useRef<HTMLDivElement|null>(null),mapObj=useRef<any>(null),markers=useRef<any[]>([]); const[radius,setRadius]=useState(25),[cat,setCat]=useState("For You"),[items,setItems]=useState<Item[]>([]),[status,setStatus]=useState("Locating you…"),[coords,setCoords]=useState<{lat:number,lng:number}|null>(null),[saved,setSaved]=useState<string[]>([]),[view,setView]=useState<View>("feed"),[windowFilter,setWindowFilter]=useState("Anytime"),[query,setQuery]=useState("");
  useEffect(()=>{try{setSaved(JSON.parse(localStorage.getItem("fnm-saved")||"[]"))}catch{};navigator.geolocation?.getCurrentPosition(p=>setCoords({lat:p.coords.latitude,lng:p.coords.longitude}),()=>setStatus("Turn on location to see what's free around you."),{enableHighAccuracy:true,timeout:10000})},[]);
