@@ -1,0 +1,2 @@
+import type {MetadataRoute} from "next";
+export default function sitemap():MetadataRoute.Sitemap{const base="https://freenearme.netlify.app";const cities=["gainesville-fl","jacksonville-fl","orlando-fl","tampa-fl","miami-fl","atlanta-ga","charlotte-nc","nashville-tn","new-york-ny","los-angeles-ca","chicago-il","dallas-tx","houston-tx","phoenix-az","denver-co","seattle-wa"];return[{url:base+"/",changeFrequency:"daily",priority:1},...cities.map(city=>({url:base+"/free/"+city,changeFrequency:"daily" as const,priority:.8}))]}
