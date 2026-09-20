@@ -162,3 +162,20 @@ create index if not exists client_errors_created_idx on client_errors(created_at
 
 alter table listing_cache add column if not exists location geography(point,4326);
 create index if not exists listing_cache_location_idx on listing_cache using gist(location);
+
+
+create table if not exists metro_targets(
+ slug text primary key,city text not null,state text not null,latitude double precision not null,longitude double precision not null,
+ priority integer not null default 100,active boolean not null default true,created_at timestamptz not null default now()
+);
+alter table metro_targets enable row level security;
+drop policy if exists "public_read_metro_targets" on metro_targets;
+create policy "public_read_metro_targets" on metro_targets for select to anon,authenticated using(active=true);
+grant select on metro_targets to anon,authenticated;
+
+create or replace view metro_inventory as
+select m.slug,m.city,m.state,m.priority,
+ (select count(*) from freebies f where (f.expires_at is null or f.expires_at>now()) and f.location is not null and st_dwithin(f.location,st_setsrid(st_makepoint(m.longitude,m.latitude),4326)::geography,25*1609.344)) as verified_count,
+ (select count(*) from listing_cache c where c.expires_at>now() and c.location is not null and st_dwithin(c.location,st_setsrid(st_makepoint(m.longitude,m.latitude),4326)::geography,25*1609.344)) as cached_count
+from metro_targets m where m.active=true;
+grant select on metro_inventory to anon,authenticated;
