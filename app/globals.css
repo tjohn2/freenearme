@@ -33,3 +33,5 @@
 
 .mapCluster{min-width:42px!important;height:42px!important;border-radius:50%!important;background:#0b0c0a!important;color:#fff!important;border:3px solid #fff!important;font-size:13px!important;box-shadow:0 4px 14px #0003}
 .mapSheet{position:absolute;z-index:6;left:12px;right:12px;bottom:12px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 48px 16px 16px;box-shadow:0 10px 35px #0003}.mapSheet h3{margin:6px 0;font-size:20px}.mapSheet p{margin:6px 0;color:var(--muted);font-weight:700}.mapSheet small{font-weight:900;color:#556170}.mapSheetClose{position:absolute;right:12px;top:10px;border:0;background:#f0f3f7;border-radius:50%;width:30px;height:30px;font-weight:900;font-size:18px}
+
+.opsModeration{display:grid;gap:10px}.opsModeration>div{display:grid;gap:7px;border:1px solid var(--line);border-radius:14px;padding:12px;background:#fff}.opsModeration>div>div{display:flex;gap:8px;flex-wrap:wrap}.opsModeration button{border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:#fff;font-weight:900}.opsModeration button:first-child{background:var(--ink);color:#fff;border-color:var(--ink)}
